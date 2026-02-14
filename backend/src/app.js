@@ -5,10 +5,8 @@ const bookRoutes = require("./routes/book.routes");
 
 const app = express();
 
-// middleware to parse JSON
 app.use(express.json());
 
-// routes
 app.use("/api", healthRoutes);
 app.use("/api/books", bookRoutes);
 
