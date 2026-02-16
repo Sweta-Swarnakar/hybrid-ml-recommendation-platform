@@ -31,12 +31,19 @@ const bookSchema = new mongoose.Schema(
       max: 5,
       default: 3,
     },
-
+    fileUrl: {
+    	type: String,
+    	required: false,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // reference to user model
       required: true,
     },
+		isDeleted: {
+  		type: Boolean,
+  		default: false
+		}
   },
   { timestamps: true }
 );
