@@ -5,7 +5,7 @@ const {
   updateBook,
   deleteBook,
   getSingleBook,
-} = require("../controllers/book.controller");
+} = require("../controllers/books.controller");
 
 const { protect, authorizeRoles } = require("../middleware/auth.middleware");
 const validate = require("../middleware/validate.middleware");
