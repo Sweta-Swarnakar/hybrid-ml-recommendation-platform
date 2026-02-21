@@ -1,30 +1,31 @@
 const Book = require("../models/book.model");
 const cache = require("../services/cache.service");
 
-// in-memory fallback cache
 const inMemoryCache = {};
 
-// GET ALL BOOKS - with pagination and cache
-const getBooks = async (req, res) => {
-  const page = Math.max(parseInt(req.query.page) || 1, 1);
-  const limit = Math.min(parseInt(req.query.limit) || 5, 50);
-  const cacheKey = `books:${page}:${limit}`;
-
-  let cacheData;
-
-  // try redis cache
+/**
+ * GET ALL BOOKS
+ * Pagination + Cache
+ */
+const getBooks = async (req, res, next) => {
   try {
-    cacheData = await cache.get(cacheKey);
-  } catch (err) {
-    console.warn("Redis down, using in-memory cache");
-    cacheData = inMemoryCache[cacheKey] || null;
-  }
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const limit = Math.min(parseInt(req.query.limit) || 5, 50);
+    const cacheKey = `books:${page}:${limit}`;
 
-  if (cacheData) {
-    return res.json({ fromCache: true, ...cacheData });
-  }
+    let cacheData;
 
-  try {
+    try {
+      cacheData = await cache.get(cacheKey);
+    } catch {
+      console.warn("Redis down, using in-memory cache");
+      cacheData = inMemoryCache[cacheKey] || null;
+    }
+
+    if (cacheData) {
+      return res.json({ fromCache: true, ...cacheData });
+    }
+
     const total = await Book.countDocuments({ isDeleted: false });
 
     const books = await Book.find({ isDeleted: false })
@@ -34,9 +35,18 @@ const getBooks = async (req, res) => {
       .limit(limit)
       .lean();
 
-    const response = { page, limit, total, data: books };
+    const totalPages = Math.ceil(total / limit);
 
-    // save to cache
+    const response = {
+      page,
+      limit,
+      total,
+      totalPages,
+      hasNextPage: page < totalPages,
+      hasPrevPage: page > 1,
+      data: books,
+    };
+
     try {
       await cache.set(cacheKey, response, 120);
     } catch {
@@ -45,24 +55,67 @@ const getBooks = async (req, res) => {
 
     res.json({ fromCache: false, ...response });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching books",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
-// ADD BOOK (admin)
-const addBook = async (req, res) => {
+/**
+ * GET SINGLE BOOK
+ */
+const getSingleBook = async (req, res, next) => {
+  try {
+    const bookId = req.params.id;
+    const cacheKey = `book:${bookId}`;
+
+    let cached;
+
+    try {
+      cached = await cache.get(cacheKey);
+    } catch {
+      cached = inMemoryCache[cacheKey];
+    }
+
+    if (cached) {
+      return res.json({ fromCache: true, data: cached });
+    }
+
+    const book = await Book.findOne({
+      _id: bookId,
+      isDeleted: false,
+    })
+      .populate("createdBy", "firstName lastName email")
+      .lean();
+
+    if (!book) {
+      const err = new Error("Book not found");
+      err.statusCode = 404;
+      return next(err);
+    }
+
+    try {
+      await cache.set(cacheKey, book, 120);
+    } catch {
+      inMemoryCache[cacheKey] = book;
+    }
+
+    res.json({ fromCache: false, data: book });
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * ADD BOOK
+ * Admin Only
+ */
+const addBook = async (req, res, next) => {
   try {
     const { title, author, description, genre, rating } = req.body;
 
     if (!title || !author || !description || !genre) {
-      return res.status(400).json({
-        success: false,
-        message: "All required fields must be provided",
-      });
+      const err = new Error("All required fields must be provided");
+      err.statusCode = 400;
+      return next(err);
     }
 
     const book = await Book.create({
@@ -74,11 +127,11 @@ const addBook = async (req, res) => {
       createdBy: req.user._id,
     });
 
-    // clear list cache after add
+    // clear list cache
     try {
       await cache.delPattern("books:*");
     } catch {
-      Object.keys(inMemoryCache).forEach(k => delete inMemoryCache[k]);
+      Object.keys(inMemoryCache).forEach((k) => delete inMemoryCache[k]);
     }
 
     res.status(201).json({
@@ -87,74 +140,84 @@ const addBook = async (req, res) => {
       data: book,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error adding book",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
-// UPDATE BOOK (admin)
-const updateBook = async (req, res) => {
+/**
+ * UPDATE BOOK
+ * Admin Only
+ */
+const updateBook = async (req, res, next) => {
   try {
     const bookId = req.params.id;
 
-    let book = await Book.findById(bookId);
+    const existingBook = await Book.findById(bookId);
 
-    if (!book || book.isDeleted) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
+    if (!existingBook || existingBook.isDeleted) {
+      const err = new Error("Book not found");
+      err.statusCode = 404;
+      return next(err);
     }
 
-    book = await Book.findByIdAndUpdate(bookId, req.body, {
-      new: true,
-      runValidators: true,
-    }).populate("createdBy", "firstName lastName email");
+    // ✅ Field Whitelisting (Security Fix)
+    const allowedFields = [
+      "title",
+      "author",
+      "description",
+      "genre",
+      "rating",
+    ];
 
-    // clear caches after update
+    const updateData = {};
+
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    const updatedBook = await Book.findByIdAndUpdate(
+      bookId,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    ).populate("createdBy", "firstName lastName email");
+
+    // clear caches
     try {
       await cache.delPattern("books:*");
       await cache.del(`book:${bookId}`);
     } catch {
-      Object.keys(inMemoryCache).forEach(k => delete inMemoryCache[k]);
+      Object.keys(inMemoryCache).forEach((k) => delete inMemoryCache[k]);
     }
 
     res.status(200).json({
       success: true,
       message: "Book updated successfully",
-      data: book,
+      data: updatedBook,
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error updating book",
-      error: error.message,
-    });
+    next(error);
   }
 };
 
-// DELETE BOOK (soft delete) - admin only
-const deleteBook = async (req, res) => {
+/**
+ * DELETE BOOK (Soft Delete)
+ * Admin Only
+ */
+const deleteBook = async (req, res, next) => {
   try {
     const bookId = req.params.id;
-
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
-        success: false,
-        message: "Only admin can delete books",
-      });
-    }
 
     const book = await Book.findById(bookId);
 
     if (!book || book.isDeleted) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
+      const err = new Error("Book not found");
+      err.statusCode = 404;
+      return next(err);
     }
 
     book.isDeleted = true;
@@ -173,56 +236,14 @@ const deleteBook = async (req, res) => {
       message: "Book deleted successfully (soft delete)",
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// GET SINGLE BOOK
-const getSingleBook = async (req, res) => {
-  try {
-    const bookId = req.params.id;
-    const cacheKey = `book:${bookId}`;
-
-    let cached;
-    try {
-      cached = await cache.get(cacheKey);
-    } catch {
-      cached = inMemoryCache[cacheKey];
-    }
-
-    if (cached) return res.json({ fromCache: true, data: cached });
-
-    const book = await Book.findOne({ _id: bookId, isDeleted: false })
-      .populate("createdBy", "firstName lastName email")
-      .lean();
-
-    if (!book) {
-      return res.status(404).json({
-        success: false,
-        message: "Book not found",
-      });
-    }
-
-    try {
-      await cache.set(cacheKey, book, 120);
-    } catch {
-      inMemoryCache[cacheKey] = book;
-    }
-
-    res.json({ fromCache: false, data: book });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error fetching book",
-    });
+    next(error);
   }
 };
 
 module.exports = {
   getBooks,
+  getSingleBook,
   addBook,
   updateBook,
   deleteBook,
-  getSingleBook,
 };
