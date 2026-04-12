@@ -35,6 +35,11 @@ const bookSchema = new mongoose.Schema(
     	type: String,
     	required: false,
     },
+    imageUrl: {
+      type: String,
+      required: false,
+      trim: true,
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // reference to user model

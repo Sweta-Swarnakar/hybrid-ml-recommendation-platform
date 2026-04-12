@@ -131,6 +131,8 @@ exports.updateBook = async (bookId, body) => {
     "description",
     "genre",
     "rating",
+    "imageUrl",
+    "fileUrl",
   ];
 
   const updateData = {};

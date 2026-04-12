@@ -13,7 +13,7 @@ exports.countBooks = async () => {
 exports.getBooks = async (page, limit) => {
   return await Book.find({ isDeleted: false })
     .populate("createdBy", "firstName lastName email")
-    .sort({ createdAt: -1 })
+    .sort({ createdAt: -1 }) //newest first
     .skip((page - 1) * limit)
     .limit(limit)
     .lean();

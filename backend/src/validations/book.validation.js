@@ -25,6 +25,14 @@ const createBookValidation = [
     .optional()
     .isFloat({ min: 0, max: 5 })
     .withMessage("Rating must be between 0 and 5"),
+  body("imageUrl")
+    .optional()
+    .isURL()
+    .withMessage("Invalid image URL"),
+  body("fileUrl")
+    .optional()
+    .isURL()
+    .withMessage("Invalid file URL"),
 ];
 
 const idValidation = [

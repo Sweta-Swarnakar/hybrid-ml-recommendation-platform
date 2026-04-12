@@ -10,9 +10,11 @@ const rateLimit = require("express-rate-limit");
 
 const app = express();
 
-app.use(helmet());
+app.use(helmet()); //adds security headers to stop script injection and iframe attacks
 
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:3000"
+})); // Only my frontend allowed to make calls to the backend
 app.use(express.json());
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 mins
