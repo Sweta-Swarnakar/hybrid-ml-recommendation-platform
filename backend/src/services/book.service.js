@@ -87,8 +87,16 @@ exports.getSingleBook = async (bookId) => {
 /**
  * ADD BOOK
  */
-exports.addBook = async (body, user) => {
-  const { title, author, description, genre, rating } = body;
+exports.addBook = async (body, user, file, image) => {
+  const { title, author, description, genre, rating, fileUrl, imageUrl } = body;
+
+  if (!file && !fileUrl) {
+    throw new Error("Book file required");
+  }
+
+  if (!image && !imageUrl) {
+    throw new Error("Image required");
+  }
 
   const book = await bookRepository.createBook({
     title,
@@ -96,6 +104,8 @@ exports.addBook = async (body, user) => {
     description,
     genre,
     rating,
+    fileUrl: file ? file.path : fileUrl,
+    imageUrl: image ? image.path : imageUrl,
     createdBy: user._id,
   });
 
@@ -116,7 +126,7 @@ exports.addBook = async (body, user) => {
 /**
  * UPDATE BOOK
  */
-exports.updateBook = async (bookId, body) => {
+exports.updateBook = async (bookId, body, file, image) => {
   const existingBook = await bookRepository.findById(bookId);
 
   if (!existingBook || existingBook.isDeleted) {
@@ -142,6 +152,15 @@ exports.updateBook = async (bookId, body) => {
       updateData[field] = body[field];
     }
   });
+
+  // 👇 NEW: override with uploaded files
+  if (file) {
+    updateData.fileUrl = file.path;
+  }
+
+  if (image) {
+    updateData.imageUrl = image.path;
+  }
 
   const updatedBook = await bookRepository.updateBook(
     bookId,

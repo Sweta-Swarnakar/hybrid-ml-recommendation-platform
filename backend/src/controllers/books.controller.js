@@ -12,12 +12,30 @@ const getSingleBook = asyncHandler(async (req, res) => {
 });
 
 const addBook = asyncHandler(async (req, res) => {
-  const data = await bookService.addBook(req.body, req.user);
+  const file = req.files?.file?.[0];
+  const image = req.files?.image?.[0];
+
+  const data = await bookService.addBook(
+    req.body,
+    req.user,
+    file,
+    image
+  );
+
   res.status(201).json(data);
 });
 
 const updateBook = asyncHandler(async (req, res) => {
-  const data = await bookService.updateBook(req.params.id, req.body);
+  const file = req.files?.file?.[0];
+  const image = req.files?.image?.[0];
+
+  const data = await bookService.updateBook(
+    req.params.id,
+    req.body,
+    file,
+    image
+  );
+
   res.status(200).json(data);
 });
 

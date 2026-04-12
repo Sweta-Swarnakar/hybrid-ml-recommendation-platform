@@ -9,6 +9,8 @@ const {
 
 const { protect, authorizeRoles } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
+const upload = require("../middlewares/uploadMiddleware");
+
 const {
   createBookValidation,
   updateBookValidation,
@@ -26,6 +28,10 @@ router.post(
   authorizeRoles("admin"),
   createBookValidation,
   validate,
+   upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "image", maxCount: 1 },
+  ]),
   addBook
 );
 
@@ -35,6 +41,10 @@ router.put(
   authorizeRoles("admin"),
   updateBookValidation,
   validate,
+   upload.fields([
+    { name: "file", maxCount: 1 },
+    { name: "image", maxCount: 1 },
+  ]),
   updateBook
 );
 
