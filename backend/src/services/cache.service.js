@@ -23,4 +23,11 @@ module.exports = {
       EX: ttl,
     });
   },
+
+  delPattern: async (pattern) => {
+    const keys = await client.keys(pattern);
+    if (keys.length > 0) {
+      await client.del(keys);
+    }
+  },
 };

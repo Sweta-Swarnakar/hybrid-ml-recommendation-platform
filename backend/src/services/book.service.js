@@ -1,4 +1,4 @@
-const bookRepository = require("../repositories/book.repository");
+const bookRepository = require("../repositories/bookRepository");
 const cache = require("./cache.service");
 
 const inMemoryCache = {};
@@ -89,12 +89,6 @@ exports.getSingleBook = async (bookId) => {
  */
 exports.addBook = async (body, user) => {
   const { title, author, description, genre, rating } = body;
-
-  if (!title || !author || !description || !genre) {
-    const err = new Error("All required fields must be provided");
-    err.statusCode = 400;
-    throw err;
-  }
 
   const book = await bookRepository.createBook({
     title,

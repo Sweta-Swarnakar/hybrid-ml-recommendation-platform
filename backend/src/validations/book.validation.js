@@ -27,6 +27,10 @@ const createBookValidation = [
     .withMessage("Rating must be between 0 and 5"),
 ];
 
+const idValidation = [
+  param("id").isMongoId().withMessage("Invalid book ID"),
+];
+
 const updateBookValidation = [
   param("id").isMongoId().withMessage("Invalid book ID"),
 
@@ -39,4 +43,5 @@ const updateBookValidation = [
 module.exports = {
   createBookValidation,
   updateBookValidation,
+  idValidation
 };

@@ -1,69 +1,30 @@
-// controllers/book.controller.js
-
 const bookService = require("../services/book.service");
+const asyncHandler = require("../utils/asyncHandler");
 
-/**
- * GET ALL BOOKS
- */
-const getBooks = async (req, res, next) => {
-  try {
-    const data = await bookService.getBooks(req.query);
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-};
+const getBooks = asyncHandler(async (req, res) => {
+  const data = await bookService.getBooks(req.query);
+  res.json(data);
+});
 
-/**
- * GET SINGLE BOOK
- */
-const getSingleBook = async (req, res, next) => {
-  try {
-    const data = await bookService.getSingleBook(req.params.id);
-    res.json(data);
-  } catch (error) {
-    next(error);
-  }
-};
+const getSingleBook = asyncHandler(async (req, res) => {
+  const data = await bookService.getSingleBook(req.params.id);
+  res.json(data);
+});
 
-/**
- * ADD BOOK
- */
-const addBook = async (req, res, next) => {
-  try {
-    const data = await bookService.addBook(req.body, req.user);
-    res.status(201).json(data);
-  } catch (error) {
-    next(error);
-  }
-};
+const addBook = asyncHandler(async (req, res) => {
+  const data = await bookService.addBook(req.body, req.user);
+  res.status(201).json(data);
+});
 
-/**
- * UPDATE BOOK
- */
-const updateBook = async (req, res, next) => {
-  try {
-    const data = await bookService.updateBook(
-      req.params.id,
-      req.body
-    );
-    res.status(200).json(data);
-  } catch (error) {
-    next(error);
-  }
-};
+const updateBook = asyncHandler(async (req, res) => {
+  const data = await bookService.updateBook(req.params.id, req.body);
+  res.status(200).json(data);
+});
 
-/**
- * DELETE BOOK
- */
-const deleteBook = async (req, res, next) => {
-  try {
-    const data = await bookService.deleteBook(req.params.id);
-    res.status(200).json(data);
-  } catch (error) {
-    next(error);
-  }
-};
+const deleteBook = asyncHandler(async (req, res) => {
+  const data = await bookService.deleteBook(req.params.id);
+  res.status(200).json(data);
+});
 
 module.exports = {
   getBooks,

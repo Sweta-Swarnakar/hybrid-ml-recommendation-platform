@@ -1,12 +1,11 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user.model");
 
-// 🔐 PROTECT - check login token
+// PROTECT
 const protect = async (req, res, next) => {
   try {
     let token;
 
-    // token from header
     if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
@@ -15,52 +14,44 @@ const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized, no token",
-      });
+      const err = new Error("Not authorized, no token");
+      err.statusCode = 401;
+      return next(err);
     }
 
-    // verify token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // get user
     const user = await User.findById(decoded.id).select("-password");
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
+      const err = new Error("User not found");
+      err.statusCode = 401;
+      return next(err);
     }
 
-    // attach user to req
     req.user = user;
 
     next();
   } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Not authorized, token failed",
-    });
+    const err = new Error("Not authorized, token failed");
+    err.statusCode = 401;
+    next(err);
   }
 };
 
-// 🛡️ ROLE AUTHORIZATION (admin/user)
+// ROLE AUTH
 const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized",
-      });
+      const err = new Error("Not authorized");
+      err.statusCode = 401;
+      return next(err);
     }
 
     if (!roles.includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: `Role (${req.user.role}) not allowed`,
-      });
+      const err = new Error(`Role (${req.user.role}) not allowed`);
+      err.statusCode = 403;
+      return next(err);
     }
 
     next();
