@@ -10,10 +10,11 @@ exports.countBooks = async () => {
 /**
  * GET BOOKS WITH PAGINATION
  */
-exports.getBooks = async (page, limit) => {
+
+exports.getBooks = async (page, limit, sortOption) => {
   return await Book.find({ isDeleted: false })
     .populate("createdBy", "firstName lastName email")
-    .sort({ createdAt: -1 }) //newest first
+    .sort(sortOption)
     .skip((page - 1) * limit)
     .limit(limit)
     .lean();

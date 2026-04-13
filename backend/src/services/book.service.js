@@ -8,8 +8,20 @@ const inMemoryCache = {};
  */
 exports.getBooks = async (query) => {
   const page = Math.max(parseInt(query.page) || 1, 1);
-  const limit = Math.min(parseInt(query.limit) || 5, 50);
-  const cacheKey = `books:${page}:${limit}`;
+  const limit = Math.min(parseInt(query.limit) || 5, 20);
+
+  let sortOption = { createdAt: -1 }; // default latest
+  let sortKey = "latest";
+
+  if (query.sort === "rating") {
+    sortOption = { rating: -1 };
+    sortKey = "rating";
+  } else if (query.sort === "title") {
+    sortOption = { title: 1 };
+    sortKey = "title";
+  }
+
+  const cacheKey = `books:${page}:${limit}:${sortKey}`;
 
   let cacheData;
 
@@ -26,7 +38,7 @@ exports.getBooks = async (query) => {
 
   const total = await bookRepository.countBooks();
 
-  const books = await bookRepository.getBooks(page, limit);
+  const books = await bookRepository.getBooks(page, limit, sortOption);
 
   const totalPages = Math.ceil(total / limit);
 
