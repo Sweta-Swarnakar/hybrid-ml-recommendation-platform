@@ -13,7 +13,7 @@ const app = express();
 app.use(helmet()); //adds security headers to stop script injection and iframe attacks
 
 app.use(cors({
-  origin: "http://localhost:3000"
+  origin: "http://localhost:5173"
 })); // Only my frontend allowed to make calls to the backend
 app.use(express.json());
 const limiter = rateLimit({
