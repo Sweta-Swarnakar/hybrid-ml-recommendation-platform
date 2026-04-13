@@ -1,5 +1,6 @@
 const bookService = require("../services/book.service");
 const asyncHandler = require("../utils/asyncHandler");
+const recommendationService = require("../services/recommendation.service");
 
 const getBooks = asyncHandler(async (req, res) => {
   const data = await bookService.getBooks(req.query);
@@ -44,10 +45,16 @@ const deleteBook = asyncHandler(async (req, res) => {
   res.status(200).json(data);
 });
 
+const getRecommendations = asyncHandler(async (req, res) => {
+  const data = await recommendationService.getRecommendations(req.params.id);
+  res.json({ success: true, data });
+});
+
 module.exports = {
   getBooks,
   getSingleBook,
   addBook,
   updateBook,
   deleteBook,
+  getRecommendations
 };

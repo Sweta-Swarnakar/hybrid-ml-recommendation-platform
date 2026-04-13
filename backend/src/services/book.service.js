@@ -153,7 +153,6 @@ exports.updateBook = async (bookId, body, file, image) => {
     }
   });
 
-  // 👇 NEW: override with uploaded files
   if (file) {
     updateData.fileUrl = file.path;
   }

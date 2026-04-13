@@ -5,11 +5,12 @@ const {
   updateBook,
   deleteBook,
   getSingleBook,
+  getRecommendations
 } = require("../controllers/books.controller");
 
 const { protect, authorizeRoles } = require("../middlewares/auth.middleware");
 const validate = require("../middlewares/validate.middleware");
-const upload = require("../middlewares/uploadMiddleware");
+const upload = require("../middlewares/upload.middleware");
 
 const {
   createBookValidation,
@@ -21,6 +22,7 @@ const router = express.Router();
 
 router.get("/", getBooks);
 router.get("/:id", idValidation, getSingleBook);
+router.get("/:id/recommendations", idValidation, getRecommendations);
 
 router.post(
   "/",
