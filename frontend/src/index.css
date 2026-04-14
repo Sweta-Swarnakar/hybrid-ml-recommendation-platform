@@ -1,0 +1,94 @@
+:root {
+  font-family: 'Trebuchet MS', 'Avenir Next', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --accent: #ffd166;
+  --accent-strong: #ff9f5a;
+  --page-bg:
+    radial-gradient(circle at top, rgba(255, 161, 90, 0.12), transparent 35%),
+    linear-gradient(180deg, #071018 0%, #09141f 36%, #0d1623 100%);
+  --text-strong: #f6f8ff;
+  --text-soft: #9eb0c9;
+  --text-body: #edf2ff;
+  --panel-overlay: rgba(10, 15, 25, 0.82);
+  --panel-border: rgba(255, 255, 255, 0.1);
+  --glass-bg: rgba(12, 18, 29, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --surface-soft: rgba(255, 255, 255, 0.05);
+  --surface-strong: rgba(255, 255, 255, 0.08);
+  --field-bg: rgba(7, 11, 18, 0.72);
+  --backdrop: rgba(4, 7, 14, 0.7);
+}
+
+:root[data-theme='light'] {
+  --page-bg:
+    radial-gradient(circle at top, rgba(255, 169, 84, 0.22), transparent 34%),
+    linear-gradient(180deg, #fff9f1 0%, #eef5ff 38%, #e8f0fb 100%);
+  --text-strong: #172033;
+  --text-soft: #5f6f87;
+  --text-body: #243149;
+  --panel-overlay: rgba(255, 255, 255, 0.74);
+  --panel-border: rgba(23, 32, 51, 0.1);
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(23, 32, 51, 0.09);
+  --surface-soft: rgba(23, 32, 51, 0.04);
+  --surface-strong: rgba(23, 32, 51, 0.08);
+  --field-bg: rgba(255, 255, 255, 0.88);
+  --backdrop: rgba(227, 235, 245, 0.72);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  color: var(--text-body);
+  background: var(--page-bg);
+  transition: background 220ms ease, color 220ms ease;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+h1,
+h2,
+h3,
+p {
+  margin: 0;
+}
+
+h1,
+h2,
+h3 {
+  font-family: Georgia, 'Times New Roman', serif;
+  line-height: 1.05;
+  color: var(--text-strong);
+}
+
+h1 {
+  font-size: clamp(2.8rem, 5vw, 5.2rem);
+}
+
+h2 {
+  font-size: clamp(1.6rem, 3vw, 2.5rem);
+}
+
+a {
+  color: inherit;
+}
