@@ -16,9 +16,9 @@ exports.getRecommendations = async (bookId) => {
 
   // 2. DB
   const books = await Book.find({ isDeleted: false })
-    .select("_id description genre")
+    .select("_id description genre title author imageUrl")
     .limit(200);
-
+  console.log("books", books)
   const targetBook = books.find((b) => b._id.toString() === bookId);
 
   if (!targetBook) throw new Error("Book not found");
@@ -33,6 +33,9 @@ exports.getRecommendations = async (bookId) => {
         id: b._id.toString(),
         description: b.description,
         genre: b.genre,
+        imageUrl: b.imageUrl,
+        title: b.title,
+        author: b.author,
       })),
     });
 

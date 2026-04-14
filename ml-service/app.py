@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from typing import Optional
 from sklearn.metrics.pairwise import cosine_similarity
 from models.tfidf_model import train
 
@@ -10,7 +11,9 @@ class Book(BaseModel):
     id: str
     description: str
     genre: str
-
+    imageUrl: Optional[str] = None
+    title: Optional[str] = None
+    author: Optional[str] = None
 
 class RecommendRequest(BaseModel):
     book_id: str
