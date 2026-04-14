@@ -22,7 +22,12 @@ const router = express.Router();
 
 router.get("/", getBooks);
 router.get("/:id", idValidation, getSingleBook);
-router.get("/:id/recommendations", idValidation, getRecommendations);
+
+router.get("/:id/recommendations",
+  protect,
+  authorizeRoles("user", "admin"),
+  idValidation, 
+  getRecommendations);
 
 router.post(
   "/",
