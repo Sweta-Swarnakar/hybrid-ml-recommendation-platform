@@ -112,6 +112,7 @@ exports.addBook = async (body, user, file, image) => {
   // clear cache
   try {
     await cache.delPattern("books:*");
+    await cache.delPattern("recommendations:*");
   } catch {
     Object.keys(inMemoryCache).forEach((k) => delete inMemoryCache[k]);
   }
@@ -169,6 +170,7 @@ exports.updateBook = async (bookId, body, file, image) => {
   // clear cache
   try {
     await cache.delPattern("books:*");
+    await cache.delPattern("recommendations:*");
     await cache.del(`book:${bookId}`);
   } catch {
     Object.keys(inMemoryCache).forEach((k) => delete inMemoryCache[k]);
@@ -198,6 +200,7 @@ exports.deleteBook = async (bookId) => {
   // clear cache
   try {
     await cache.delPattern("books:*");
+    await cache.delPattern("recommendations:*");
     await cache.del(`book:${bookId}`);
   } catch {
     console.warn("Cache clear failed");

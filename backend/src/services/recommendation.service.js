@@ -1,40 +1,55 @@
+const axios = require("axios");
 const Book = require("../models/book.model");
+const cache = require("./cache.service");
+
+const ML_URL = process.env.ML_URL || "http://localhost:8000";
 
 exports.getRecommendations = async (bookId) => {
-  const books = await Book.find({ isDeleted: false });
+  const cacheKey = `recommendations:${bookId}`;
 
-  const targetBook = books.find(b => b._id.toString() === bookId);
+  // 1. Cache
+  const cached = await cache.get(cacheKey);
+  if (cached) {
+    console.log("⚡ Recommendation cache hit");
+    return cached;
+  }
+
+  // 2. DB
+  const books = await Book.find({ isDeleted: false })
+    .select("_id description genre")
+    .limit(200);
+
+  const targetBook = books.find((b) => b._id.toString() === bookId);
 
   if (!targetBook) throw new Error("Book not found");
 
-  const TfIdf = natural.TfIdf;
-  const tfidf = new TfIdf();
+  // 3. ML call
+  let recommendations = [];
 
-  books.forEach(book => {
-    tfidf.addDocument(book.description);
-  });
-
-  const scores = [];
-
-  tfidf.tfidfs(targetBook.description, (i, measure) => {
-    let score = measure;
-
-    // boost if same genre
-    if (books[i].genre === targetBook.genre) {
-      score += 1;
-    }
-
-    scores.push({
-      book: books[i],
-      score,
+  try {
+    const response = await axios.post(`${ML_URL}/recommend`, {
+      book_id: bookId,
+      books: books.map((b) => ({
+        id: b._id.toString(),
+        description: b.description,
+        genre: b.genre,
+      })),
     });
-  });
 
-  const recommendations = scores
-    .filter(item => item.book._id.toString() !== bookId)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 5)
-    .map(item => item.book);
+    // ML returns IDs
+
+    const ids = response.data.recommendations;
+
+    // map IDs → full book objects
+    recommendations = books.filter((b) => ids.includes(b._id.toString()));
+  } catch (err) {
+    console.error("ML failed:", err.message);
+  }
+
+  // 4. Cache only if valid
+  if (recommendations.length > 0) {
+    await cache.set(cacheKey, recommendations, 1800);
+  }
 
   return recommendations;
 };
