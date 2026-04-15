@@ -26,7 +26,7 @@ export function Navbar({
       <button className="brand" onClick={() => onNavigate('/')}>
         <span className="brand-mark" />
         <span>
-          <strong>NovelNest</strong>
+          <strong>InkForge</strong>
           <small>hybrid recommendations</small>
         </span>
       </button>
