@@ -13,8 +13,11 @@ const app = express();
 
 app.use(helmet()); //adds security headers to stop script injection and iframe attacks
 
+const allowedOrigins = ["http://localhost:5173"]
+if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL)
+
 app.use(cors({
-  origin: ["http://localhost:5173", process.env.FRONTEND_URL], // Allow requests only from these origins
+  origin: allowedOrigins,
 })); // Only my frontend allowed to make calls to the backend
 app.use(express.json());
 app.use("/uploads", express.static("uploads"));

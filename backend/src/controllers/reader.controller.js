@@ -32,7 +32,7 @@ const proxyFile = asyncHandler(async (req, res) => {
   const upstream = await fetch(parsedUrl.toString(), {
     redirect: "follow",
     headers: {
-      "User-Agent": "hybrid-ml-reader/1.0",
+      "User-Agent": "Mozilla/5.0 (compatible; hybrid-ml-reader/1.0)",
       Accept: "*/*",
     },
   });
@@ -59,7 +59,28 @@ const proxyFile = asyncHandler(async (req, res) => {
     res.setHeader("Content-Disposition", disposition);
   }
 
-  Readable.fromWeb(upstream.body).pipe(res);
+  // Handle web stream piping for older Node versions
+  if (typeof Readable.fromWeb === 'function') {
+    Readable.fromWeb(upstream.body).pipe(res);
+  } else {
+    // Fallback for Node < 17: convert web stream to Node stream
+    const reader = upstream.body.getReader();
+    const stream = new Readable({
+      async read() {
+        try {
+          const { done, value } = await reader.read();
+          if (done) {
+            this.push(null);
+          } else {
+            this.push(value);
+          }
+        } catch (err) {
+          this.destroy(err);
+        }
+      }
+    });
+    stream.pipe(res);
+  }
 });
 
 module.exports = {

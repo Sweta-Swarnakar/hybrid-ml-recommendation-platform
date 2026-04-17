@@ -1,6 +1,6 @@
 export type ReaderFileType = 'pdf' | 'epub' | 'unknown'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api'
 
 export function detectReaderFileType(url: string): ReaderFileType {
   const normalized = url.toLowerCase()
