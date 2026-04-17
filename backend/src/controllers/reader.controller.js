@@ -29,13 +29,28 @@ const proxyFile = asyncHandler(async (req, res) => {
     });
   }
 
-  const upstream = await fetch(parsedUrl.toString(), {
-    redirect: "follow",
-    headers: {
-      "User-Agent": "Mozilla/5.0 (compatible; hybrid-ml-reader/1.0)",
-      Accept: "*/*",
-    },
-  });
+  let upstream;
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+
+    upstream = await fetch(parsedUrl.toString(), {
+      redirect: "follow",
+      headers: {
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
+        Accept: "*/*",
+      },
+      signal: controller.signal,
+    });
+    
+    clearTimeout(timeout);
+  } catch (fetchErr) {
+    console.error(`Fetch error for ${targetUrl}:`, fetchErr.message);
+    return res.status(502).json({
+      success: false,
+      message: `Failed to fetch file: ${fetchErr.message}`,
+    });
+  }
 
   if (!upstream.ok || !upstream.body) {
     return res.status(upstream.status || 502).json({
