@@ -1,4 +1,4 @@
-const { Readable } = require("stream");
+const axios = require("axios");
 const asyncHandler = require("../utils/asyncHandler");
 
 const proxyFile = asyncHandler(async (req, res) => {
@@ -31,19 +31,16 @@ const proxyFile = asyncHandler(async (req, res) => {
 
   let upstream;
   try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 30000); // 30 second timeout
-
-    upstream = await fetch(parsedUrl.toString(), {
-      redirect: "follow",
+    upstream = await axios.get(parsedUrl.toString(), {
+      responseType: "stream",
       headers: {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
         Accept: "*/*",
       },
-      signal: controller.signal,
+      timeout: 30000,
+      maxRedirects: 10,
+      validateStatus: () => true,
     });
-    
-    clearTimeout(timeout);
   } catch (fetchErr) {
     console.error(`Fetch error for ${targetUrl}:`, fetchErr.message);
     return res.status(502).json({
@@ -52,7 +49,8 @@ const proxyFile = asyncHandler(async (req, res) => {
     });
   }
 
-  if (!upstream.ok || !upstream.body) {
+  if (upstream.status >= 400 || !upstream.data) {
+    console.error(`Upstream request failed for ${targetUrl}:`, upstream.status);
     return res.status(upstream.status || 502).json({
       success: false,
       message: `Upstream request failed with status ${upstream.status}`,
@@ -61,41 +59,32 @@ const proxyFile = asyncHandler(async (req, res) => {
 
   res.setHeader(
     "Content-Type",
-    upstream.headers.get("content-type") || "application/octet-stream"
+    upstream.headers["content-type"] || "application/octet-stream"
   );
 
-  const contentLength = upstream.headers.get("content-length");
+  const contentLength = upstream.headers["content-length"];
   if (contentLength) {
     res.setHeader("Content-Length", contentLength);
   }
 
-  const disposition = upstream.headers.get("content-disposition");
+  const disposition = upstream.headers["content-disposition"];
   if (disposition) {
     res.setHeader("Content-Disposition", disposition);
   }
 
-  // Handle web stream piping for older Node versions
-  if (typeof Readable.fromWeb === 'function') {
-    Readable.fromWeb(upstream.body).pipe(res);
-  } else {
-    // Fallback for Node < 17: convert web stream to Node stream
-    const reader = upstream.body.getReader();
-    const stream = new Readable({
-      async read() {
-        try {
-          const { done, value } = await reader.read();
-          if (done) {
-            this.push(null);
-          } else {
-            this.push(value);
-          }
-        } catch (err) {
-          this.destroy(err);
-        }
-      }
-    });
-    stream.pipe(res);
-  }
+  upstream.data.on("error", (err) => {
+    console.error(`Stream error for ${targetUrl}:`, err.message);
+    if (!res.headersSent) {
+      res.status(502).json({
+        success: false,
+        message: `Failed to stream file: ${err.message}`,
+      });
+    } else {
+      res.destroy(err);
+    }
+  });
+
+  upstream.data.pipe(res);
 });
 
 module.exports = {
