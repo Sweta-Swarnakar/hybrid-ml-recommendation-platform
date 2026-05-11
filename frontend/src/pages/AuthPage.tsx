@@ -36,7 +36,6 @@ export function AuthPage({ mode, onNavigate, onAuthenticated }: AuthPageProps) {
       <div className="auth-copy">
         <p className="eyebrow">{isLogin ? 'Welcome Back' : 'Join The Library'}</p>
         <h1>{isLogin ? 'Login to open protected details.' : 'Create your reader account.'}</h1>
-        <p className="muted">JWT is stored locally and attached to protected requests automatically inside the app.</p>
       </div>
 
       <form className="panel auth-form" onSubmit={handleSubmit}>

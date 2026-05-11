@@ -37,8 +37,11 @@ const proxyFile = asyncHandler(async (req, res) => {
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36",
         Accept: "*/*",
       },
-      timeout: 30000,
+      timeout: 60000,
       maxRedirects: 10,
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+      decompress: true,
       validateStatus: () => true,
     });
   } catch (fetchErr) {
